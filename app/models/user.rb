@@ -11,4 +11,8 @@ class User < ApplicationRecord
     uniqueness: {case_sensitive: false}
     # validates :avatar_file, file: {ext: [:jpg, :png]}
 
+    def to_session
+        {id: id}
+    end
+
 end

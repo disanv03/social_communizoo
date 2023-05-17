@@ -1,5 +1,7 @@
 class UsersController < ApplicationController
 
+    skip_before_action :only_signed_in, only: [:new, :create, :confirm]
+
     def new
         @user = User.new
     end
@@ -8,9 +10,32 @@ class UsersController < ApplicationController
        user_params = params.require(:user).permit(:username, :email, :password, :password_confirmation)
        @user = User.new(user_params)
        if @user.valid?
-        render 'new'
+        @user.save
+        UserMailer.confirm(@user).deliver_now
+        redirect_to new_user_path, success: 'Votre compte a bien été crée, vous devriez recevoir un email de confirmation'
        else
         render 'new'
        end
     end
+
+    def confirm
+        @user = User.find(params[:id])
+        if @user.confirmation_token == params[:token]
+            @user.update(confirmed: true, confirmation_token: nil)
+            @user.save(validate: false)
+            session[:auth] = @user.to_session
+            redirect_to profil_path, success: 'Votre compte a bien été confirmé'
+        else
+            redirect_to new_user_path, danger: 'ce token ne semble pas valide'
+        end
+    end
+
+    def edit
+        @user = current_user
+    end
+
+    def update
+    end
+
+
 end
